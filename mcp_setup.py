@@ -10,12 +10,14 @@ import argparse
 PACKAGES_TO_INSTALL = [
     "@modelcontextprotocol/server-filesystem",  # npm package
     "@patruff/server-terminator",               # npm package
+    "@patruff/server-flux",                     # npm package
     "mcp-server-sqlite"                         # pip package
 ]
 
 # API Keys Configuration
 API_KEYS = {
-    "GIT_PAT_TOKEN": "",  # GitHub Personal Access Token
+    "GIT_PAT_TOKEN": "",          # GitHub Personal Access Token
+    "REPLICATE_API_TOKEN": "",    # Replicate AI API Token
 }
 
 def find_npm():
@@ -96,6 +98,15 @@ def update_config(api_keys):
                     ],
                     "env": {
                         "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
+                    }
+                },
+                "flux": {
+                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                    "args": [
+                        str(Path(npm_root) / "@patruff" / "server-flux" / "dist" / "index.js")
+                    ],
+                    "env": {
+                        "REPLICATE_API_TOKEN": api_keys.get("REPLICATE_API_TOKEN", "")
                     }
                 },
                 "sqlite": {
