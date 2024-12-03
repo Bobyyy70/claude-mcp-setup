@@ -1,1 +1,22 @@
-IyBDbGF1ZGUgTUNQIFNldHVwCgpUaGlzIHNjcmlwdCBoZWxwcyBzZXQgdXAgYW5kIGNvbmZpZ3VyZSBNb2RlbCBDb250ZXh0IFByb3RvY29sIChNQ1ApIHNlcnZlcnMgZm9yIENsYXVkZS4KCiMjIFN1cHBvcnRlZCBNQ1BzCgotIGBAbW9kZWxjb250ZXh0cHJvdG9jb2wvc2VydmVyLWZpbGVzeXN0ZW1gOiBCYXNpYyBmaWxlIHN5c3RlbSBvcGVyYXRpb25zCi0gYEBwYXRydWZmL3NlcnZlci10ZXJtaW5hdG9yYDogRmlsZSBkZWxldGlvbiBvcGVyYXRpb25zCi0gYEBwYXRydWZmL3NlcnZlci1mbHV4YDogSW1hZ2UgZ2VuZXJhdGlvbiB1c2luZyBGbHV4IEFJIG1vZGVsCi0gYG1jcC1zZXJ2ZXItc3FsaXRlYDogU1FMaXRlIGRhdGFiYXNlIG9wZXJhdGlvbnMKCiMjIEVudmlyb25tZW50IFZhcmlhYmxlcwoKVGhlIHNjcmlwdCBzdXBwb3J0cyB0aGUgZm9sbG93aW5nIGVudmlyb25tZW50IHZhcmlhYmxlczoKLSBgR0lUSFVCX1BFUlNPTkFMX0FDQ0VTU19UT0tFTmA6IEZvciBHaXRIdWIgb3BlcmF0aW9ucwotIGBSRVBMSUNBVEVfQVBJX1RPS0VOYC6gRm9yIHVzaW5nIHRoZSBGbHV4IGltYWdlIGdlbmVyYXRpb24gbW9kZWwKCiMjIFVzYWdlCgoxLiBNYWtlIHN1cmUgeW91IGhhdmUgUHl0aG9uIDMueCBhbmQgTm9kZS5qcyBpbnN0YWxsZWQKMi4gUnVuIGBweXRob24gbWNwX3NldHVwLnB5YAozLiBFbnRlciBBUEkga2V5cyB3aGVuIHByb21wdGVkIChvciB1c2UgLS1za2lwLXByb21wdHMgdG8gc2tpcCk=
+# Claude MCP Setup
+
+This script helps set up and configure Model Context Protocol (MCP) servers for Claude.
+
+## Supported MCPs
+
+- `@modelcontextprotocol/server-filesystem`: Basic file system operations
+- `@patruff/server-terminator`: File deletion operations
+- `@patruff/server-flux`: Image generation using Flux AI model
+- `mcp-server-sqlite`: SQLite database operations
+
+## Environment Variables
+
+The script supports the following environment variables:
+- `GITHUB_PERSONAL_ACCESS_TOKEN`: For GitHub operations
+- `REPLICATE_API_TOKEN`: For using the Flux image generation model
+
+## Usage
+
+1. Make sure you have Python 3.x and Node.js installed
+2. Run `python mcp_setup.py`
+3. Enter API keys when prompted (or use --skip-prompts to skip)
