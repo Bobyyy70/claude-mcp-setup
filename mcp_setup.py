@@ -9,15 +9,27 @@ import argparse
 # Package Configuration
 PACKAGES_TO_INSTALL = [
     "@modelcontextprotocol/server-filesystem",  # npm package
-    "@patruff/server-terminator",               # npm package
-    "@patruff/server-flux",                     # npm package
-    "mcp-server-sqlite"                         # pip package
+    "@modelcontextprotocol/server-memory",     # npm package
+    "@modelcontextprotocol/server-brave-search", # npm package
+    "@modelcontextprotocol/server-github",     # npm package
+    "@patruff/server-terminator",              # npm package
+    "@patruff/server-flux",                    # npm package
+    "mcp-server-sqlite"                        # pip package
 ]
 
 # API Keys Configuration
 API_KEYS = {
     "GIT_PAT_TOKEN": "",          # GitHub Personal Access Token
     "REPLICATE_API_TOKEN": "",    # Replicate AI API Token
+    "BRAVE_API_KEY": ""           # Brave Search API Key
+}
+
+# MCP Server Configs that require API keys
+MCP_API_REQUIREMENTS = {
+    "github": ["GIT_PAT_TOKEN"],
+    "terminator": ["GIT_PAT_TOKEN"],
+    "flux": ["REPLICATE_API_TOKEN"],
+    "brave-search": ["BRAVE_API_KEY"]
 }
 
 def find_npm():
@@ -68,6 +80,14 @@ def get_config_path():
     # Linux
     return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
+def check_api_keys(mcp_name, api_keys):
+    """Check if required API keys are available for an MCP"""
+    if mcp_name not in MCP_API_REQUIREMENTS:
+        return True
+    
+    required_keys = MCP_API_REQUIREMENTS[mcp_name]
+    return all(api_keys.get(key) for key in required_keys)
+
 def update_config(api_keys):
     """Update Claude desktop configuration"""
     config_path = get_config_path()
@@ -84,6 +104,7 @@ def update_config(api_keys):
 
         config = {
             "mcpServers": {
+                # MCPs without API requirements
                 "filesystem": {
                     "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
                     "args": [
@@ -91,23 +112,11 @@ def update_config(api_keys):
                         str(Path.home() / "anthropicFun")
                     ]
                 },
-                "terminator": {
+                "memory": {
                     "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
                     "args": [
-                        str(Path(npm_root) / "@patruff" / "server-terminator" / "dist" / "index.js")
-                    ],
-                    "env": {
-                        "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
-                    }
-                },
-                "flux": {
-                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                    "args": [
-                        str(Path(npm_root) / "@patruff" / "server-flux" / "dist" / "index.js")
-                    ],
-                    "env": {
-                        "REPLICATE_API_TOKEN": api_keys.get("REPLICATE_API_TOKEN", "")
-                    }
+                        str(Path(npm_root) / "@modelcontextprotocol" / "server-memory" / "dist" / "index.js")
+                    ]
                 },
                 "sqlite": {
                     "command": "uv",
@@ -122,6 +131,51 @@ def update_config(api_keys):
                 }
             }
         }
+
+        # Add MCPs that require API keys if keys are available
+        if check_api_keys("brave-search", api_keys):
+            config["mcpServers"]["brave-search"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@modelcontextprotocol" / "server-brave-search" / "dist" / "index.js")
+                ],
+                "env": {
+                    "BRAVE_API_KEY": api_keys.get("BRAVE_API_KEY", "")
+                }
+            }
+
+        if check_api_keys("github", api_keys):
+            config["mcpServers"]["github"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@modelcontextprotocol" / "server-github" / "dist" / "index.js")
+                ],
+                "env": {
+                    "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
+                }
+            }
+
+        if check_api_keys("terminator", api_keys):
+            config["mcpServers"]["terminator"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@patruff" / "server-terminator" / "dist" / "index.js")
+                ],
+                "env": {
+                    "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
+                }
+            }
+
+        if check_api_keys("flux", api_keys):
+            config["mcpServers"]["flux"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@patruff" / "server-flux" / "dist" / "index.js")
+                ],
+                "env": {
+                    "REPLICATE_API_TOKEN": api_keys.get("REPLICATE_API_TOKEN", "")
+                }
+            }
 
         # Load existing config if it exists
         if config_path.exists():
@@ -170,11 +224,16 @@ def main():
     if not update_config(api_keys):
         success = False
         print("Warning: Failed to update configuration")
+    elif api_keys:
+        print("\nMCP Servers requiring API keys:")
+        for mcp, required_keys in MCP_API_REQUIREMENTS.items():
+            status = "Configured" if check_api_keys(mcp, api_keys) else "Missing API key(s)"
+            print(f"- {mcp}: {status}")
 
     if success:
-        print("Setup completed successfully!")
+        print("\nSetup completed successfully!")
     else:
-        print("Setup completed with some warnings. Please check the messages above.")
+        print("\nSetup completed with some warnings. Please check the messages above.")
         sys.exit(1)
 
 if __name__ == "__main__":
