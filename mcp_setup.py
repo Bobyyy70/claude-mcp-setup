@@ -26,12 +26,13 @@ API_KEYS = {
     "BRAVE_API_KEY": ""           # Brave Search API Key
 }
 
-# MCP Server Configs that require API keys
+# MCP Server Configs that require API keys or credentials
 MCP_API_REQUIREMENTS = {
     "github": ["GIT_PAT_TOKEN"],
     "terminator": ["GIT_PAT_TOKEN"],
     "flux": ["REPLICATE_API_TOKEN"],
-    "brave-search": ["BRAVE_API_KEY"]
+    "brave-search": ["BRAVE_API_KEY"],
+    "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"]  # Added Gmail/Drive requirement
 }
 
 def find_npm():
@@ -81,6 +82,27 @@ def get_config_path():
         return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
     # Linux
     return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
+
+def check_gmail_drive_credentials():
+    """Check if Gmail/Drive credentials exist"""
+    home_dir = Path.home()
+    gdrive_cred_file = home_dir / ".gdrive-server-credentials.json"
+    gmail_cred_file = home_dir / ".gmail-server-credentials.json"
+    gcp_oauth_file = home_dir / "gcp-oauth.keys.json"
+    
+    credentials_exist = (
+        gdrive_cred_file.exists() and 
+        gmail_cred_file.exists() and 
+        gcp_oauth_file.exists()
+    )
+    
+    if not credentials_exist:
+        print("\nGmail/Drive credentials not found. Required files:")
+        print(f"  GCP OAuth keys: {'✓' if gcp_oauth_file.exists() else '✗'} ({gcp_oauth_file})")
+        print(f"  Drive credentials: {'✓' if gdrive_cred_file.exists() else '✗'} ({gdrive_cred_file})")
+        print(f"  Gmail credentials: {'✓' if gmail_cred_file.exists() else '✗'} ({gmail_cred_file})")
+        
+    return credentials_exist
 
 def setup_gmail_drive_auth():
     """Setup Gmail/Drive authentication"""
@@ -166,6 +188,10 @@ def check_api_keys(mcp_name, api_keys):
     if mcp_name not in MCP_API_REQUIREMENTS:
         return True
     
+    # Special handling for Gmail/Drive which uses credential files
+    if mcp_name == "gmail-drive":
+        return check_gmail_drive_credentials()
+    
     required_keys = MCP_API_REQUIREMENTS[mcp_name]
     return all(api_keys.get(key) for key in required_keys)
 
@@ -209,16 +235,20 @@ def update_config(api_keys):
                         "--db-path",
                         "~/test.db"
                     ]
-                },
-                # Add gmail-drive configuration
-                "gmail-drive": {
-                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                    "args": [
-                        str(Path(npm_root) / "@patruff" / "server-gmail-drive" / "dist" / "index.js")
-                    ]
                 }
             }
         }
+
+        # Add gmail-drive configuration if credentials exist
+        if check_gmail_drive_credentials():
+            config["mcpServers"]["gmail-drive"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@patruff" / "server-gmail-drive" / "dist" / "index.js")
+                ]
+            }
+        else:
+            print("Skipping Gmail/Drive MCP configuration due to missing credentials")
 
         # Add MCPs that require API keys if keys are available
         if check_api_keys("brave-search", api_keys):
@@ -315,8 +345,8 @@ def main():
             print("Gmail/Drive authentication setup initiated.")
             print("After completing authentication in your browser, you can use the Gmail/Drive MCP.")
         else:
-            success = False
             print("Warning: Gmail/Drive authentication setup failed")
+            # Don't set success to False here as Gmail/Drive is optional
 
     # Update configuration
     if not update_config(api_keys):
