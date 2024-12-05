@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import subprocess
+import shutil
 from pathlib import Path
 import argparse
 
@@ -14,6 +15,7 @@ PACKAGES_TO_INSTALL = [
     "@modelcontextprotocol/server-github",     # npm package
     "@patruff/server-terminator",              # npm package
     "@patruff/server-flux",                    # npm package
+    "@patruff/server-gmail-drive",             # npm package - Added new package
     "mcp-server-sqlite"                        # pip package
 ]
 
@@ -80,6 +82,85 @@ def get_config_path():
     # Linux
     return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
+def setup_gmail_drive_auth():
+    """Setup Gmail/Drive authentication"""
+    script_dir = Path(__file__).parent
+    gcp_oauth_file = script_dir / "gcp-oauth.keys.json"
+    home_dir = Path.home()
+    dest_file = home_dir / "gcp-oauth.keys.json"
+    gdrive_cred_file = home_dir / ".gdrive-server-credentials.json"
+    gmail_cred_file = home_dir / ".gmail-server-credentials.json"
+
+    # Check if auth file exists in either location
+    if dest_file.exists():
+        print(f"Found existing GCP OAuth keys at {dest_file}")
+    elif gcp_oauth_file.exists():
+        try:
+            shutil.copy2(gcp_oauth_file, dest_file)
+            print(f"Copied GCP OAuth keys to {dest_file}")
+        except Exception as e:
+            print(f"Error copying file: {e}")
+            return False
+    else:
+        print(f"Warning: GCP OAuth keys file not found at {gcp_oauth_file}")
+        print(f"and not found at {dest_file}")
+        print("Please place your gcp-oauth.keys.json in either location")
+        return False
+
+    # Get the package directory
+    npm_cmd = find_npm()
+    npm_root_result = subprocess.run(
+        [npm_cmd, "root", "-g"], 
+        capture_output=True,
+        text=True,
+        shell=(os.name == 'nt')
+    )
+    
+    if npm_root_result.returncode != 0:
+        print("Error getting npm root directory")
+        return False
+        
+    npm_root = npm_root_result.stdout.strip()
+    package_dir = Path(npm_root) / "@patruff" / "server-gmail-drive"
+    index_js = package_dir / "dist" / "index.js"
+    
+    if not index_js.exists():
+        print(f"\nError: index.js not found at: {index_js}")
+        return False
+        
+    # Run the auth command
+    node_path = "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe"
+    auth_cmd = [node_path, str(index_js), "auth"]
+    print(f"\nRunning auth command: {' '.join(auth_cmd)}")
+    
+    try:
+        result = subprocess.run(
+            auth_cmd, 
+            capture_output=True,
+            text=True,
+            shell=(os.name == 'nt')
+        )
+        
+        print("\nAuth command output:")
+        print(result.stdout)
+        if result.stderr:
+            print("\nAuth command errors:")
+            print(result.stderr)
+            
+    except Exception as e:
+        print(f"\nError running auth command: {e}")
+        return False
+
+    # Check if credential files were created
+    if gdrive_cred_file.exists() and gmail_cred_file.exists():
+        print("\nCredential files created successfully!")
+        return True
+    else:
+        print("\nWarning: Credential files not created:")
+        print(f"  Drive credentials exist: {gdrive_cred_file.exists()}")
+        print(f"  Gmail credentials exist: {gmail_cred_file.exists()}")
+        return False
+
 def check_api_keys(mcp_name, api_keys):
     """Check if required API keys are available for an MCP"""
     if mcp_name not in MCP_API_REQUIREMENTS:
@@ -127,6 +208,13 @@ def update_config(api_keys):
                         "mcp-server-sqlite",
                         "--db-path",
                         "~/test.db"
+                    ]
+                },
+                # Add gmail-drive configuration
+                "gmail-drive": {
+                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                    "args": [
+                        str(Path(npm_root) / "@patruff" / "server-gmail-drive" / "dist" / "index.js")
                     ]
                 }
             }
@@ -203,6 +291,7 @@ def update_config(api_keys):
 def main():
     parser = argparse.ArgumentParser(description="Claude MCP Setup Script")
     parser.add_argument("--skip-prompts", action="store_true", help="Skip API key prompts")
+    parser.add_argument("--skip-auth", action="store_true", help="Skip Gmail/Drive authentication")
     args = parser.parse_args()
 
     # Collect API keys
@@ -219,6 +308,15 @@ def main():
         if not install_package(package):
             success = False
             print(f"Warning: Failed to install {package}")
+
+    # Setup Gmail/Drive authentication if not skipped
+    if not args.skip_auth:
+        if setup_gmail_drive_auth():
+            print("Gmail/Drive authentication setup initiated.")
+            print("After completing authentication in your browser, you can use the Gmail/Drive MCP.")
+        else:
+            success = False
+            print("Warning: Gmail/Drive authentication setup failed")
 
     # Update configuration
     if not update_config(api_keys):
