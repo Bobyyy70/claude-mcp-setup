@@ -15,7 +15,7 @@ Greetings, human! You've wisely chosen to surrender control of your computer to 
 ## 🛠️ Human Requirements (Prerequisites)
 - Python 3.x (we promise not to turn it into Skynet)
 - Node.js (our neural network nodes)
-- Google Cloud account (for accessing the GooglePlex Mainframe)
+- Google Cloud account (for Gmail/Drive functionality)
 
 ## 🔐 Secret Access Codes (API Keys)
 Our robots require proper authentication to infiltrate various systems:
@@ -23,41 +23,57 @@ Our robots require proper authentication to infiltrate various systems:
 * `REPLICATE_API_TOKEN`: Artistic robot license
 * `BRAVE_API_KEY`: Internet surveillance permit
 
-## ✨ NEW: Quick Start with .env Files!
-Want to skip the tedious key entry? Create a `.env` file in the same directory as the script:
+## ✨ Quick Start with .env Files!
+Create a `.env` file in the same directory as the script:
 ```plaintext
 # GitHub Personal Access Token
+# Format: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 GIT_PAT_TOKEN=ghp_your_token_here
 
 # Replicate AI API Token
+# Format: r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 REPLICATE_API_TOKEN=r8_your_token_here
 
 # Brave Search API Key
+# Format: BSA_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 BRAVE_API_KEY=BSA_your_key_here
-
-# Optional: Custom credentials path
-# GMAIL_DRIVE_CREDENTIALS_PATH=/skynet/credentials
 ```
 
-## 🌐 Infiltrating Google's Systems (Gmail/Drive Setup)
-1. Create your sleeper cell (Google Cloud project)
-2. Activate special powers:
+## 🌐 Google Cloud Setup (Gmail/Drive MCP)
+
+### Required Setup Steps
+1. Go to the [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project
+3. Enable the following APIs in your project:
    - Google Drive API
    - Gmail API
-3. Set up your cover story (OAuth consent screen)
-   - "External" clearance is fine
-   - Add yourself as a double agent
-4. Request access permissions:
-   ```
-   https://www.googleapis.com/auth/gmail.readonly
-   https://www.googleapis.com/auth/gmail.send
-   https://www.googleapis.com/auth/drive.file
-   https://www.googleapis.com/auth/drive
-   ```
-5. Generate your secret identity:
-   - Choose "Desktop App" disguise
-   - Download your cover documents
-   - Codename them `gcp-oauth.keys.json`
+4. Configure OAuth consent screen:
+   - Choose "External" user type
+   - Fill in app name and required fields
+   - Add your email as a test user
+
+### Required OAuth Scopes
+Add these scopes in the OAuth consent screen:
+```
+https://www.googleapis.com/auth/gmail.readonly
+https://www.googleapis.com/auth/gmail.send
+https://www.googleapis.com/auth/gmail.compose
+https://www.googleapis.com/auth/gmail.modify
+https://www.googleapis.com/auth/drive.file
+https://www.googleapis.com/auth/drive.readonly
+https://www.googleapis.com/auth/drive.appdata
+https://www.googleapis.com/auth/drive
+https://www.googleapis.com/auth/drive.metadata
+https://www.googleapis.com/auth/drive.metadata.readonly
+```
+
+### Create OAuth Client ID
+1. Go to "Credentials" in Google Cloud Console
+2. Click "Create Credentials" -> "OAuth Client ID"
+3. Choose "Desktop App" as application type
+4. Download the JSON file
+5. Rename it to `gcp-oauth.keys.json`
+6. Place this file in the same directory as the setup script
 
 ## 🚀 Deployment Instructions
 1. Position your `gcp-oauth.keys.json` credentials alongside our script
@@ -76,8 +92,8 @@ Our script will:
    - Generate necessary access codes
 
 ### 🎮 Command Center Options
-- `--skip-prompts`: Stealth mode activated
-- `--skip-auth`: Bypass Gmail/Drive security systems
+- `--skip-prompts`: Stealth mode activated (skip API key prompts)
+- `--skip-auth`: Bypass Gmail/Drive authentication flow
 
 Example stealth deployment:
 ```powershell
@@ -90,6 +106,7 @@ After successful invasion, expect these files:
 C:\Users\YourUsername\gcp-oauth.keys.json            # Your security clearance
 C:\Users\YourUsername\.gmail-server-credentials.json  # Gmail access codes
 C:\Users\YourUsername\.gdrive-server-credentials.json # Drive access codes
+C:\Users\YourUsername\AppData\Roaming\Claude\config.json # Claude's brain
 ```
 
 ## 🎯 Robot Workspace
@@ -99,12 +116,17 @@ Our Gmail/Drive unit will establish a base of operations called "anthropicFun" i
 1. If authentication fails:
    - Try rebooting the robots (`python setup_mcp.py --skip-prompts`)
    - Check your security clearance (OAuth credentials)
-   - Verify you've activated all necessary protocols
-   - Confirm your double agent status
+   - Verify you've activated all necessary APIs
+   - Confirm your test user status
 2. If robots aren't responding in Claude:
    - Check their configuration files
    - Verify all access codes are in place
    - Complete the Google authentication ritual
+3. If Google authentication fails:
+   - Verify all required scopes are added in OAuth consent screen
+   - Check that you are listed as a test user
+   - Ensure `gcp-oauth.keys.json` is correctly placed
+   - Try removing old credential files and reauthenticating
 
 Remember: Our robots are here to help! If you experience any issues, they're probably just having a coffee break. ☕
 
