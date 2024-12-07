@@ -6,6 +6,7 @@ import subprocess
 import shutil
 from pathlib import Path
 import argparse
+import dotenv
 
 # Package Configuration
 PACKAGES_TO_INSTALL = [
@@ -15,8 +16,9 @@ PACKAGES_TO_INSTALL = [
     "@modelcontextprotocol/server-github",     # npm package
     "@patruff/server-terminator",              # npm package
     "@patruff/server-flux",                    # npm package
-    "@patruff/server-gmail-drive",             # npm package - Added new package
-    "mcp-server-sqlite"                        # pip package
+    "@patruff/server-gmail-drive",             # npm package
+    "mcp-server-sqlite",                       # pip package
+    "python-dotenv"                           # pip package - Added for .env support
 ]
 
 # API Keys Configuration
@@ -34,6 +36,28 @@ MCP_API_REQUIREMENTS = {
     "brave-search": ["BRAVE_API_KEY"],
     "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"]  # Added Gmail/Drive requirement
 }
+
+def load_env_config():
+    """Load configuration from .env file if it exists"""
+    script_dir = Path(__file__).parent
+    env_path = script_dir / ".env"
+    
+    if env_path.exists():
+        print(f"Loading configuration from {env_path}")
+        dotenv.load_dotenv(env_path)
+        
+        # Update API keys from environment variables
+        env_keys = {
+            "GIT_PAT_TOKEN": os.getenv("GIT_PAT_TOKEN"),
+            "REPLICATE_API_TOKEN": os.getenv("REPLICATE_API_TOKEN"),
+            "BRAVE_API_KEY": os.getenv("BRAVE_API_KEY")
+        }
+        
+        # Remove None values
+        return {k: v for k, v in env_keys.items() if v is not None}
+    else:
+        print("No .env file found, using default configuration")
+        return {}
 
 def find_npm():
     """Find npm executable considering fnm setup"""
@@ -324,13 +348,21 @@ def main():
     parser.add_argument("--skip-auth", action="store_true", help="Skip Gmail/Drive authentication")
     args = parser.parse_args()
 
-    # Collect API keys
-    api_keys = API_KEYS.copy()
+    # Load API keys from .env file first
+    api_keys = load_env_config()
+    
+    # Fill in any missing keys from default config
+    for key in API_KEYS:
+        if key not in api_keys:
+            api_keys[key] = API_KEYS[key]
+
+    # Only prompt for missing keys if not skipping prompts
     if not args.skip_prompts:
-        for key in api_keys:
-            value = input(f"Enter value for {key} (press Enter to skip): ")
-            if value:
-                api_keys[key] = value
+        for key in API_KEYS:
+            if not api_keys.get(key):  # Only prompt if key is empty
+                value = input(f"Enter value for {key} (press Enter to skip): ")
+                if value:
+                    api_keys[key] = value
 
     # Install packages
     success = True
