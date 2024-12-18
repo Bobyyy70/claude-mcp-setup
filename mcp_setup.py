@@ -17,6 +17,7 @@ PACKAGES_TO_INSTALL = [
     "@patruff/server-terminator",              # npm package
     "@patruff/server-flux",                    # npm package
     "@patruff/server-gmail-drive",             # npm package
+    "@abhiz123/todoist-mcp-server",           # npm package - Added for Todoist integration
     "mcp-server-sqlite",                       # pip package
     "python-dotenv"                           # pip package - Added for .env support
 ]
@@ -25,7 +26,8 @@ PACKAGES_TO_INSTALL = [
 API_KEYS = {
     "GIT_PAT_TOKEN": "",          # GitHub Personal Access Token
     "REPLICATE_API_TOKEN": "",    # Replicate AI API Token
-    "BRAVE_API_KEY": ""           # Brave Search API Key
+    "BRAVE_API_KEY": "",          # Brave Search API Key
+    "TODOIST_API_TOKEN": ""       # Todoist API Token
 }
 
 # MCP Server Configs that require API keys or credentials
@@ -34,7 +36,8 @@ MCP_API_REQUIREMENTS = {
     "terminator": ["GIT_PAT_TOKEN"],
     "flux": ["REPLICATE_API_TOKEN"],
     "brave-search": ["BRAVE_API_KEY"],
-    "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"]  # Added Gmail/Drive requirement
+    "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"],
+    "todoist": ["TODOIST_API_TOKEN"]  # Added Todoist requirement
 }
 
 def load_env_config():
@@ -50,7 +53,8 @@ def load_env_config():
         env_keys = {
             "GIT_PAT_TOKEN": os.getenv("GIT_PAT_TOKEN"),
             "REPLICATE_API_TOKEN": os.getenv("REPLICATE_API_TOKEN"),
-            "BRAVE_API_KEY": os.getenv("BRAVE_API_KEY")
+            "BRAVE_API_KEY": os.getenv("BRAVE_API_KEY"),
+            "TODOIST_API_TOKEN": os.getenv("TODOIST_API_TOKEN")  # Added Todoist token
         }
         
         # Remove None values
@@ -262,6 +266,20 @@ def update_config(api_keys):
                 }
             }
         }
+
+        # Add Todoist configuration if API key exists
+        if check_api_keys("todoist", api_keys):
+            config["mcpServers"]["todoist"] = {
+                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
+                "args": [
+                    str(Path(npm_root) / "@abhiz123" / "todoist-mcp-server" / "dist" / "index.js")
+                ],
+                "env": {
+                    "TODOIST_API_TOKEN": api_keys.get("TODOIST_API_TOKEN", "")
+                }
+            }
+        else:
+            print("Skipping Todoist MCP configuration due to missing API token")
 
         # Add gmail-drive configuration if credentials exist
         if check_gmail_drive_credentials():
