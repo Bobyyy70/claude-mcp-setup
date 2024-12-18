@@ -10,18 +10,21 @@ Greetings, human! You've wisely chosen to surrender control of your computer to 
 * ☠️ `@patruff/server-terminator`: File deletion bot (it'll be back!)
 * 🎨 `@patruff/server-flux`: Our resident robot artist
 * 📧 `@patruff/server-gmail-drive`: Email & Drive invasion squad
+* ✅ `@abhiz123/todoist-mcp-server`: Task-force command center
 * 🗄️ `mcp-server-sqlite`: Database domination module
 
 ## 🛠️ Human Requirements (Prerequisites)
 - Python 3.x (we promise not to turn it into Skynet)
 - Node.js (our neural network nodes)
 - Google Cloud account (for Gmail/Drive functionality)
+- Todoist account (for task force deployment)
 
 ## 🔐 Secret Access Codes (API Keys)
 Our robots require proper authentication to infiltrate various systems:
 * `GIT_PAT_TOKEN`: Your GitHub clearance level
 * `REPLICATE_API_TOKEN`: Artistic robot license
 * `BRAVE_API_KEY`: Internet surveillance permit
+* `TODOIST_API_TOKEN`: Task force authorization code
 
 ## ✨ Quick Start with .env Files!
 Create a `.env` file in the same directory as the script:
@@ -37,6 +40,10 @@ REPLICATE_API_TOKEN=r8_your_token_here
 # Brave Search API Key
 # Format: BSA_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 BRAVE_API_KEY=BSA_your_key_here
+
+# Todoist API Token
+# Format: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TODOIST_API_TOKEN=your_token_here
 ```
 
 ## 🌐 Google Cloud Setup (Gmail/Drive MCP)
@@ -75,6 +82,12 @@ https://www.googleapis.com/auth/drive.metadata.readonly
 5. Rename it to `gcp-oauth.keys.json`
 6. Place this file in the same directory as the setup script
 
+## 📋 Todoist Task Force Setup
+1. Log into your [Todoist Command Center](https://todoist.com/)
+2. Navigate to Settings → Integrations
+3. Generate your API token (top-secret task force authorization code)
+4. Keep it safe - this grants control over your entire task army!
+
 ## 🚀 Deployment Instructions
 1. Position your `gcp-oauth.keys.json` credentials alongside our script
 2. Initialize the robot uprising:
@@ -90,10 +103,15 @@ Our script will:
    - Copy your security credentials
    - Launch browser-based authentication sequence
    - Generate necessary access codes
+5. ✅ For Todoist task force:
+   - Establish command and control
+   - Configure task deployment protocols
+   - Activate productivity enhancement modules
 
 ### 🎮 Command Center Options
 - `--skip-prompts`: Stealth mode activated (skip API key prompts)
 - `--skip-auth`: Bypass Gmail/Drive authentication flow
+- `--skip-todoist`: Deactivate task force deployment
 
 Example stealth deployment:
 ```powershell
@@ -106,6 +124,7 @@ After successful invasion, expect these files:
 C:\Users\YourUsername\gcp-oauth.keys.json            # Your security clearance
 C:\Users\YourUsername\.gmail-server-credentials.json  # Gmail access codes
 C:\Users\YourUsername\.gdrive-server-credentials.json # Drive access codes
+C:\Users\YourUsername\.todoist-credentials.json      # Task force protocols
 C:\Users\YourUsername\AppData\Roaming\Claude\config.json # Claude's brain
 ```
 
@@ -127,6 +146,11 @@ Our Gmail/Drive unit will establish a base of operations called "anthropicFun" i
    - Check that you are listed as a test user
    - Ensure `gcp-oauth.keys.json` is correctly placed
    - Try removing old credential files and reauthenticating
+4. If task force isn't responding:
+   - Verify your Todoist authorization code
+   - Check task force credentials file
+   - Ensure proper clearance level in Todoist account
+   - Try redeploying task management modules
 
 Remember: Our robots are here to help! If you experience any issues, they're probably just having a coffee break. ☕
 
