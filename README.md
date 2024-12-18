@@ -134,6 +134,7 @@ Our Gmail/Drive unit will establish a base of operations called "anthropicFun" i
    - Check that you are listed as a test user
    - Ensure `gcp-oauth.keys.json` is correctly placed
    - Try removing old credential files and reauthenticating
+   - In order to reauthenticate run node "C:\Program Files\nodejs\node_modules\@patruff\server-gmail-drive\dist\index.js" auth
 
 Remember: Our robots are here to help! If you experience any issues, they're probably just having a coffee break. ☕
 
