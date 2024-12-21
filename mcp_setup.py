@@ -1,33 +1,46 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "python-dotenv"
+# ]
+# ///
+
 import json
 import os
 import sys
 import subprocess
-import shutil
 from pathlib import Path
 import argparse
 import dotenv
 
 # Package Configuration
-PACKAGES_TO_INSTALL = [
-    "@modelcontextprotocol/server-filesystem",  # npm package
-    "@modelcontextprotocol/server-memory",     # npm package
-    "@modelcontextprotocol/server-brave-search", # npm package
-    "@modelcontextprotocol/server-github",     # npm package
-    "@patruff/server-terminator",              # npm package
-    "@patruff/server-flux",                    # npm package
-    "@patruff/server-gmail-drive",             # npm package
-    "@abhiz123/todoist-mcp-server",           # npm package - Added for Todoist integration
-    "mcp-server-sqlite",                       # pip package
-    "python-dotenv"                           # pip package - Added for .env support
-]
+PACKAGES_TO_INSTALL = {
+    # npm packages that will be run with npx
+    "npm": [
+        "@modelcontextprotocol/server-filesystem",
+        "@modelcontextprotocol/server-memory",
+        "@modelcontextprotocol/server-brave-search",
+        "@modelcontextprotocol/server-github",
+        "@patruff/server-terminator",
+        "@patruff/server-flux",
+        "@patruff/server-gmail-drive",
+        "@abhiz123/todoist-mcp-server"
+    ],
+    # Python packages that will be run with uvx
+    "python": [
+        "mcp-server-sqlite",
+        "mcp-server-time",
+        "python-dotenv"
+    ]
+}
 
 # API Keys Configuration
 API_KEYS = {
-    "GIT_PAT_TOKEN": "",          # GitHub Personal Access Token
-    "REPLICATE_API_TOKEN": "",    # Replicate AI API Token
-    "BRAVE_API_KEY": "",          # Brave Search API Key
-    "TODOIST_API_TOKEN": ""       # Todoist API Token
+    "GIT_PAT_TOKEN": "",
+    "REPLICATE_API_TOKEN": "",
+    "BRAVE_API_KEY": "",
+    "TODOIST_API_TOKEN": ""
 }
 
 # MCP Server Configs that require API keys or credentials
@@ -37,7 +50,7 @@ MCP_API_REQUIREMENTS = {
     "flux": ["REPLICATE_API_TOKEN"],
     "brave-search": ["BRAVE_API_KEY"],
     "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"],
-    "todoist": ["TODOIST_API_TOKEN"]  # Added Todoist requirement
+    "todoist": ["TODOIST_API_TOKEN"]
 }
 
 def load_env_config():
@@ -49,47 +62,24 @@ def load_env_config():
         print(f"Loading configuration from {env_path}")
         dotenv.load_dotenv(env_path)
         
-        # Update API keys from environment variables
         env_keys = {
             "GIT_PAT_TOKEN": os.getenv("GIT_PAT_TOKEN"),
             "REPLICATE_API_TOKEN": os.getenv("REPLICATE_API_TOKEN"),
             "BRAVE_API_KEY": os.getenv("BRAVE_API_KEY"),
-            "TODOIST_API_TOKEN": os.getenv("TODOIST_API_TOKEN")  # Added Todoist token
+            "TODOIST_API_TOKEN": os.getenv("TODOIST_API_TOKEN")
         }
         
-        # Remove None values
         return {k: v for k, v in env_keys.items() if v is not None}
     else:
         print("No .env file found, using default configuration")
         return {}
 
-def find_npm():
-    """Find npm executable considering fnm setup"""
-    if os.name == 'nt':  # Windows
-        # Try fnm path first
-        fnm_path = Path(os.environ["LOCALAPPDATA"]) / "fnm"
-        if fnm_path.exists():
-            # Run fnm env to get the current environment
-            try:
-                result = subprocess.run(['fnm', 'env', '--json'], capture_output=True, text=True, shell=True)
-                if result.returncode == 0:
-                    env_data = json.loads(result.stdout)
-                    # Update environment with fnm paths
-                    os.environ.update(env_data)
-                    return 'npm.cmd'  # Use npm.cmd on Windows when running through shell
-            except:
-                pass
-    
-    return 'npm'  # Default to regular npm
-
-def install_package(package):
+def install_package(package, package_type):
     """Install a package using npm or pip"""
     try:
-        if package.startswith("@"):
+        if package_type == "npm":
             print(f"Installing NPM package: {package}")
-            npm_cmd = find_npm()
-            # Use shell=True on Windows for npm
-            subprocess.run([npm_cmd, "install", "-g", package], check=True, shell=(os.name == 'nt'))
+            subprocess.run(["npm", "install", "-g", package], check=True, shell=(os.name == 'nt'))
         else:
             print(f"Installing Python package: {package}")
             subprocess.run([sys.executable, "-m", "pip", "install", package], check=True)
@@ -114,109 +104,19 @@ def get_config_path():
 def check_gmail_drive_credentials():
     """Check if Gmail/Drive credentials exist"""
     home_dir = Path.home()
-    gdrive_cred_file = home_dir / ".gdrive-server-credentials.json"
-    gmail_cred_file = home_dir / ".gmail-server-credentials.json"
-    gcp_oauth_file = home_dir / "gcp-oauth.keys.json"
-    
-    credentials_exist = (
-        gdrive_cred_file.exists() and 
-        gmail_cred_file.exists() and 
-        gcp_oauth_file.exists()
+    return all(
+        (home_dir / f).exists() for f in [
+            ".gdrive-server-credentials.json",
+            ".gmail-server-credentials.json",
+            "gcp-oauth.keys.json"
+        ]
     )
-    
-    if not credentials_exist:
-        print("\nGmail/Drive credentials not found. Required files:")
-        print(f"  GCP OAuth keys: {'✓' if gcp_oauth_file.exists() else '✗'} ({gcp_oauth_file})")
-        print(f"  Drive credentials: {'✓' if gdrive_cred_file.exists() else '✗'} ({gdrive_cred_file})")
-        print(f"  Gmail credentials: {'✓' if gmail_cred_file.exists() else '✗'} ({gmail_cred_file})")
-        
-    return credentials_exist
-
-def setup_gmail_drive_auth():
-    """Setup Gmail/Drive authentication"""
-    script_dir = Path(__file__).parent
-    gcp_oauth_file = script_dir / "gcp-oauth.keys.json"
-    home_dir = Path.home()
-    dest_file = home_dir / "gcp-oauth.keys.json"
-    gdrive_cred_file = home_dir / ".gdrive-server-credentials.json"
-    gmail_cred_file = home_dir / ".gmail-server-credentials.json"
-
-    # Check if auth file exists in either location
-    if dest_file.exists():
-        print(f"Found existing GCP OAuth keys at {dest_file}")
-    elif gcp_oauth_file.exists():
-        try:
-            shutil.copy2(gcp_oauth_file, dest_file)
-            print(f"Copied GCP OAuth keys to {dest_file}")
-        except Exception as e:
-            print(f"Error copying file: {e}")
-            return False
-    else:
-        print(f"Warning: GCP OAuth keys file not found at {gcp_oauth_file}")
-        print(f"and not found at {dest_file}")
-        print("Please place your gcp-oauth.keys.json in either location")
-        return False
-
-    # Get the package directory
-    npm_cmd = find_npm()
-    npm_root_result = subprocess.run(
-        [npm_cmd, "root", "-g"], 
-        capture_output=True,
-        text=True,
-        shell=(os.name == 'nt')
-    )
-    
-    if npm_root_result.returncode != 0:
-        print("Error getting npm root directory")
-        return False
-        
-    npm_root = npm_root_result.stdout.strip()
-    package_dir = Path(npm_root) / "@patruff" / "server-gmail-drive"
-    index_js = package_dir / "dist" / "index.js"
-    
-    if not index_js.exists():
-        print(f"\nError: index.js not found at: {index_js}")
-        return False
-        
-    # Run the auth command
-    node_path = "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe"
-    auth_cmd = [node_path, str(index_js), "auth"]
-    print(f"\nRunning auth command: {' '.join(auth_cmd)}")
-    
-    try:
-        result = subprocess.run(
-            auth_cmd, 
-            capture_output=True,
-            text=True,
-            shell=(os.name == 'nt')
-        )
-        
-        print("\nAuth command output:")
-        print(result.stdout)
-        if result.stderr:
-            print("\nAuth command errors:")
-            print(result.stderr)
-            
-    except Exception as e:
-        print(f"\nError running auth command: {e}")
-        return False
-
-    # Check if credential files were created
-    if gdrive_cred_file.exists() and gmail_cred_file.exists():
-        print("\nCredential files created successfully!")
-        return True
-    else:
-        print("\nWarning: Credential files not created:")
-        print(f"  Drive credentials exist: {gdrive_cred_file.exists()}")
-        print(f"  Gmail credentials exist: {gmail_cred_file.exists()}")
-        return False
 
 def check_api_keys(mcp_name, api_keys):
     """Check if required API keys are available for an MCP"""
     if mcp_name not in MCP_API_REQUIREMENTS:
         return True
     
-    # Special handling for Gmail/Drive which uses credential files
     if mcp_name == "gmail-drive":
         return check_gmail_drive_credentials()
     
@@ -228,41 +128,27 @@ def update_config(api_keys):
     config_path = get_config_path()
     
     try:
-        # Ensure config directory exists
         config_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Create default config
-        npm_root = subprocess.run([find_npm(), "root", "-g"], 
-                                capture_output=True, 
-                                text=True, 
-                                shell=(os.name == 'nt')).stdout.strip()
-
         config = {
             "mcpServers": {
-                # MCPs without API requirements
+                # NPX-based servers
                 "filesystem": {
-                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                    "args": [
-                        str(Path(npm_root) / "@modelcontextprotocol" / "server-filesystem" / "dist" / "index.js"),
-                        str(Path.home() / "anthropicFun")
-                    ]
+                    "command": "npx",
+                    "args": ["@modelcontextprotocol/server-filesystem", str(Path.home() / "anthropicFun")]
                 },
                 "memory": {
-                    "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                    "args": [
-                        str(Path(npm_root) / "@modelcontextprotocol" / "server-memory" / "dist" / "index.js")
-                    ]
+                    "command": "npx",
+                    "args": ["@modelcontextprotocol/server-memory"]
                 },
+                # UVX-based servers
                 "sqlite": {
-                    "command": "uv",
-                    "args": [
-                        "--directory",
-                        "parent_of_servers_repo/servers/src/sqlite",
-                        "run",
-                        "mcp-server-sqlite",
-                        "--db-path",
-                        "~/test.db"
-                    ]
+                    "command": "uvx",
+                    "args": ["mcp-server-sqlite", "--db-path", "~/test.db"]
+                },
+                "time": {
+                    "command": "uvx",
+                    "args": ["mcp-server-time"]
                 }
             }
         }
@@ -270,35 +156,25 @@ def update_config(api_keys):
         # Add Todoist configuration if API key exists
         if check_api_keys("todoist", api_keys):
             config["mcpServers"]["todoist"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@abhiz123" / "todoist-mcp-server" / "dist" / "index.js")
-                ],
+                "command": "npx",
+                "args": ["@abhiz123/todoist-mcp-server"],
                 "env": {
                     "TODOIST_API_TOKEN": api_keys.get("TODOIST_API_TOKEN", "")
                 }
             }
-        else:
-            print("Skipping Todoist MCP configuration due to missing API token")
 
         # Add gmail-drive configuration if credentials exist
         if check_gmail_drive_credentials():
             config["mcpServers"]["gmail-drive"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@patruff" / "server-gmail-drive" / "dist" / "index.js")
-                ]
+                "command": "npx",
+                "args": ["@patruff/server-gmail-drive"]
             }
-        else:
-            print("Skipping Gmail/Drive MCP configuration due to missing credentials")
 
-        # Add MCPs that require API keys if keys are available
+        # Add API-dependent servers if keys are available
         if check_api_keys("brave-search", api_keys):
             config["mcpServers"]["brave-search"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@modelcontextprotocol" / "server-brave-search" / "dist" / "index.js")
-                ],
+                "command": "npx",
+                "args": ["@modelcontextprotocol/server-brave-search"],
                 "env": {
                     "BRAVE_API_KEY": api_keys.get("BRAVE_API_KEY", "")
                 }
@@ -306,10 +182,8 @@ def update_config(api_keys):
 
         if check_api_keys("github", api_keys):
             config["mcpServers"]["github"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@modelcontextprotocol" / "server-github" / "dist" / "index.js")
-                ],
+                "command": "npx",
+                "args": ["@modelcontextprotocol/server-github"],
                 "env": {
                     "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
                 }
@@ -317,10 +191,8 @@ def update_config(api_keys):
 
         if check_api_keys("terminator", api_keys):
             config["mcpServers"]["terminator"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@patruff" / "server-terminator" / "dist" / "index.js")
-                ],
+                "command": "npx",
+                "args": ["@patruff/server-terminator"],
                 "env": {
                     "GITHUB_PERSONAL_ACCESS_TOKEN": api_keys.get("GIT_PAT_TOKEN", "")
                 }
@@ -328,21 +200,18 @@ def update_config(api_keys):
 
         if check_api_keys("flux", api_keys):
             config["mcpServers"]["flux"] = {
-                "command": "node" if os.name != 'nt' else r"C:\Program Files\nodejs\node.exe",
-                "args": [
-                    str(Path(npm_root) / "@patruff" / "server-flux" / "dist" / "index.js")
-                ],
+                "command": "npx",
+                "args": ["@patruff/server-flux"],
                 "env": {
                     "REPLICATE_API_TOKEN": api_keys.get("REPLICATE_API_TOKEN", "")
                 }
             }
 
-        # Load existing config if it exists
+        # Load and merge existing config if it exists
         if config_path.exists():
             try:
                 with open(config_path) as f:
                     existing_config = json.load(f)
-                # Merge existing mcpServers with new ones
                 if "mcpServers" in existing_config:
                     existing_config["mcpServers"].update(config["mcpServers"])
                     config = existing_config
@@ -377,26 +246,18 @@ def main():
     # Only prompt for missing keys if not skipping prompts
     if not args.skip_prompts:
         for key in API_KEYS:
-            if not api_keys.get(key):  # Only prompt if key is empty
+            if not api_keys.get(key):
                 value = input(f"Enter value for {key} (press Enter to skip): ")
                 if value:
                     api_keys[key] = value
 
     # Install packages
     success = True
-    for package in PACKAGES_TO_INSTALL:
-        if not install_package(package):
-            success = False
-            print(f"Warning: Failed to install {package}")
-
-    # Setup Gmail/Drive authentication if not skipped
-    if not args.skip_auth:
-        if setup_gmail_drive_auth():
-            print("Gmail/Drive authentication setup initiated.")
-            print("After completing authentication in your browser, you can use the Gmail/Drive MCP.")
-        else:
-            print("Warning: Gmail/Drive authentication setup failed")
-            # Don't set success to False here as Gmail/Drive is optional
+    for pkg_type, packages in PACKAGES_TO_INSTALL.items():
+        for package in packages:
+            if not install_package(package, pkg_type):
+                success = False
+                print(f"Warning: Failed to install {package}")
 
     # Update configuration
     if not update_config(api_keys):
