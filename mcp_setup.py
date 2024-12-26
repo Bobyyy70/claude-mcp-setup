@@ -25,7 +25,8 @@ PACKAGES_TO_INSTALL = {
         "@patruff/server-terminator",
         "@patruff/server-flux",
         "@patruff/server-gmail-drive",
-        "@abhiz123/todoist-mcp-server"
+        "@abhiz123/todoist-mcp-server",
+        "@patruff/server-lightrag"
     ],
     # Python packages that will be run with uvx
     "python": [
@@ -40,7 +41,8 @@ API_KEYS = {
     "GIT_PAT_TOKEN": "",
     "REPLICATE_API_TOKEN": "",
     "BRAVE_API_KEY": "",
-    "TODOIST_API_TOKEN": ""
+    "TODOIST_API_TOKEN": "",
+    "LIGHTRAG_API_URL": "http://127.0.0.1:8020"
 }
 
 # MCP Server Configs that require API keys or credentials
@@ -50,7 +52,8 @@ MCP_API_REQUIREMENTS = {
     "flux": ["REPLICATE_API_TOKEN"],
     "brave-search": ["BRAVE_API_KEY"],
     "gmail-drive": ["GMAIL_DRIVE_CREDENTIALS"],
-    "todoist": ["TODOIST_API_TOKEN"]
+    "todoist": ["TODOIST_API_TOKEN"],
+    "lightrag": ["LIGHTRAG_API_URL"]
 }
 
 def load_env_config():
@@ -66,7 +69,8 @@ def load_env_config():
             "GIT_PAT_TOKEN": os.getenv("GIT_PAT_TOKEN"),
             "REPLICATE_API_TOKEN": os.getenv("REPLICATE_API_TOKEN"),
             "BRAVE_API_KEY": os.getenv("BRAVE_API_KEY"),
-            "TODOIST_API_TOKEN": os.getenv("TODOIST_API_TOKEN")
+            "TODOIST_API_TOKEN": os.getenv("TODOIST_API_TOKEN"),
+            "LIGHTRAG_API_URL": os.getenv("LIGHTRAG_API_URL")
         }
         
         return {k: v for k, v in env_keys.items() if v is not None}
@@ -140,6 +144,13 @@ def update_config(api_keys):
                 "memory": {
                     "command": "npx",
                     "args": ["@modelcontextprotocol/server-memory"]
+                },
+                "lightrag": {
+                    "command": "npx",
+                    "args": ["@patruff/server-lightrag"],
+                    "env": {
+                        "LIGHTRAG_API_URL": api_keys.get("LIGHTRAG_API_URL", "http://127.0.0.1:8020")
+                    }
                 },
                 # UVX-based servers
                 "sqlite": {
