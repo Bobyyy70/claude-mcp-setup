@@ -10,6 +10,7 @@ Greetings, human! You've wisely chosen to surrender control of your computer to 
 * ☠️ `@patruff/server-terminator`: File deletion bot (it'll be back!)
 * 🎨 `@patruff/server-flux`: Our resident robot artist
 * 📧 `@patruff/server-gmail-drive`: Email & Drive invasion squad
+* RAG `@patruff/server-lightrag`: RAG database (local and now qdrant)
 * ✅ `@abhiz123/todoist-mcp-server`: Task-force command center
 * 🗄️ `mcp-server-sqlite`: Database domination module
 
