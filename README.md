@@ -13,6 +13,7 @@ Greetings, human! You've wisely chosen to surrender control of your computer to 
 * RAG `@patruff/server-lightrag`: RAG database (local and now qdrant)
 * ✅ `@abhiz123/todoist-mcp-server`: Task-force command center
 * 🗄️ `mcp-server-sqlite`: Database domination module
+* X `@patruff/server-codesnip`: Editing only part of a file (saves token money)
 
 ## 🛠️ Human Requirements (Prerequisites)
 - Python 3.x (we promise not to turn it into Skynet)
