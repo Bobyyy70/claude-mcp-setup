@@ -26,7 +26,8 @@ PACKAGES_TO_INSTALL = {
         "@patruff/server-flux",
         "@patruff/server-gmail-drive",
         "@abhiz123/todoist-mcp-server",
-        "@patruff/server-lightrag"
+        "@patruff/server-lightrag",
+        "@patruff/server-codesnip"
     ],
     # Python packages that will be run with uvx
     "python": [
@@ -140,6 +141,10 @@ def update_config(api_keys):
                 "filesystem": {
                     "command": "npx",
                     "args": ["@modelcontextprotocol/server-filesystem", str(Path.home() / "anthropicFun")]
+                },
+                "codesnip": {
+                    "command": "npx",
+                    "args": ["@patruff/server-codesnip"]
                 },
                 "memory": {
                     "command": "npx",
